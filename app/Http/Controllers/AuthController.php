@@ -2,53 +2,97 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    public function showLoginForm()
+    // ✅ تسجيل مستخدم جديد
+    public function register(Request $request)
     {
-        return view('auth.login');
-    }
-
-    public function showRegisterForm()
-    {
-        return view('auth.register');
-    }
-
-    public function login(LoginRequest $request)
-    {
-        if ($this->handleLogin($request->only('email', 'password'))) {
-            return redirect()->route('layout')->with('success', 'Logged in successfully.');
-        }
-
-        return back()->withErrors(['email' => 'Invalid login credentials.']);
-    }
-
-    private function handleLogin($credentials)
-    {
-        return Auth::attempt($credentials);
-    }
-
-    public function register(RegisterRequest $request)
-    {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+        $validated = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+            'user_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        Auth::login($user);
-        return redirect()->route('layout')->with('success', 'Registration successful!');
+        if ($validated->fails()) {
+            return response()->json($validated->errors(), 422);
+        }
+
+        // ✅ رفع الصورة إذا تم تقديمها
+        $imagePath = null;
+        if ($request->hasFile('user_image')) {
+            $imagePath = $request->file('user_image')->store('users', 'public');
+        }
+
+        try {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'user_image' => $imagePath,
+            ]);
+
+            $token = JWTAuth::fromUser($user);
+
+            return response()->json([
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'user' => $user
+            ], 201);
+
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 500);
+        }
     }
 
+    // ✅ تسجيل الدخول
+    public function login(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
+
+        if (!$token = JWTAuth::attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return $this->respondWithToken($token);
+    }
+
+    // ✅ استرجاع بيانات المستخدم الحالي
+    public function me()
+    {
+        return response()->json(auth()->user());
+    }
+
+    // ✅ تسجيل الخروج
     public function logout()
     {
-        Auth::logout();
-        return redirect()->route('login')->with('success', 'Logged out successfully.');
+        auth()->logout();
+
+        return response()->json(['message' => 'Successfully logged out']);
+    }
+
+    // ✅ تحديث التوكن
+    public function refresh()
+    {
+        return $this->respondWithToken(auth()->refresh());
+    }
+
+    /**
+     * ✅ إرجاع معلومات التوكن
+     */
+    protected function respondWithToken($token)
+    {
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth()->factory()->getTTL() * 60
+        ]);
     }
 }
