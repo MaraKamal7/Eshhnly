@@ -67,13 +67,13 @@ class AuthController extends Controller
     // ✅ استرجاع بيانات المستخدم الحالي
     public function me()
     {
-        return response()->json(auth()->user());
+        return response()->json(Auth::user());
     }
 
     // ✅ تسجيل الخروج
     public function logout()
     {
-        auth()->logout();
+        Auth::logout();
 
         return response()->json(['message' => 'Successfully logged out']);
     }
@@ -81,7 +81,7 @@ class AuthController extends Controller
     // ✅ تحديث التوكن
     public function refresh()
     {
-        return $this->respondWithToken(auth()->refresh());
+        return $this->respondWithToken(JWTAuth::parseToken()->refresh());
     }
 
     /**
@@ -92,7 +92,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60
+            'expires_in' => JWTAuth::factory()->getTTL() * 60
         ]);
     }
 }

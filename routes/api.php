@@ -10,7 +10,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 // ✅ استخدام apiResource لمسارات CRUD الخاصة بالمسؤولين
-Route::apiResource('admins', AdminController::class)->middleware('auth:api');
+//Route::apiResource('admins', AdminController::class)->middleware('auth:api');
 
 // ✅ مسارات المصادقة (JWT)
 Route::prefix('auth')->group(function () {
