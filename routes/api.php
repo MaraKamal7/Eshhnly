@@ -3,6 +3,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController\AuthController;
 use App\Http\Controllers\ApiController\ShipController;
+use App\Http\Controllers\ApiController\TripController;
+use App\Http\Controllers\ApiController\ClientController;
 use App\Http\Controllers\Api\Admin\AdminController;
 use PHPOpenSourceSaver\JWTAuth\Http\Middleware\Authenticate;
 
@@ -25,4 +27,6 @@ Route::apiResource('admins', AdminController::class)->middleware(Authenticate::c
 
 Route::middleware(Authenticate::class)->group(function () {
     Route::apiResource('ships', ShipController::class);
+    Route::apiResource('trips', TripController::class);
+    Route::apiResource('clients', ClientController::class);
 });
