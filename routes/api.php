@@ -6,12 +6,10 @@ use App\Http\Controllers\ApiController\ShipController;
 use App\Http\Controllers\Api\Admin\AdminController;
 use PHPOpenSourceSaver\JWTAuth\Http\Middleware\Authenticate;
 
-// ✅ حماية استرجاع بيانات المستخدم عبر JWT
 Route::middleware(Authenticate::class)->get('/user', function (Request $request) {
     return response()->json($request->user());
 });
 
-// ✅ مسارات المصادقة (JWT)
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
@@ -23,10 +21,8 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// ✅ استخدام apiResource لمسارات CRUD الخاصة بالمسؤولين
 Route::apiResource('admins', AdminController::class)->middleware(Authenticate::class);
 
-// ✅ حماية مسارات `ships` باستخدام `Authenticate::class`
 Route::middleware(Authenticate::class)->group(function () {
     Route::apiResource('ships', ShipController::class);
 });
